@@ -17,6 +17,7 @@ def parse_args():
     parser.add_argument('--model', type=str, default='baseline0_newatt')
     parser.add_argument('--output', type=str, default='saved_models/exp0')
     parser.add_argument('--batch_size', type=int, default=512)
+    parser.add_argument('--cpu_size', type=int, default=32, help='32|64|128')
     parser.add_argument('--seed', type=int, default=1111, help='random seed')
     args = parser.parse_args()
     return args
@@ -30,8 +31,8 @@ if __name__ == '__main__':
     torch.backends.cudnn.benchmark = True
 
     dictionary = Dictionary.load_from_file('data/dictionary.pkl')
-    train_dset = VQAFeatureDataset('train', dictionary)
-    eval_dset = VQAFeatureDataset('val', dictionary)
+    train_dset = VQAFeatureDataset('train', dictionary, args)
+    eval_dset = VQAFeatureDataset('val', dictionary, args)
     batch_size = args.batch_size
 
     constructor = 'build_%s' % args.model
