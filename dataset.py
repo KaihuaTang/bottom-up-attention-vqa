@@ -121,11 +121,11 @@ class VQAFeatureDataset(Dataset):
         #    self.features = np.array(hf.get('image_features'))
         #    self.spatials = np.array(hf.get('spatial_features'))
         if self.cpu_size == 128:
-           with h5py.File(h5_path, 'r') as hf:
+            with h5py.File(h5_path, 'r') as hf:
                 self.features = np.array(hf.get('image_features'))
                 self.spatials = np.array(hf.get('spatial_features'))
         elif self.cpu_size == 64:
-           if self.split_name == 'val':
+            if self.split_name == 'val':
                 with h5py.File(h5_path, 'r') as hf:
                     self.features = np.array(hf.get('image_features'))
                     self.spatials = np.array(hf.get('spatial_features'))
