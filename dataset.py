@@ -99,9 +99,11 @@ def _load_dataset(dataroot, name, img_id2val):
 
 
 class VQAFeatureDataset(Dataset):
-    def __init__(self, name, dictionary, dataroot='data'):
+    def __init__(self, name, dictionary, args, dataroot='data'):
         super(VQAFeatureDataset, self).__init__()
         assert name in ['train', 'val']
+        self.split_name = name
+        self.cpu_size = args.cpu_size
 
         ans2label_path = os.path.join(dataroot, 'cache', 'trainval_ans2label.pkl')
         label2ans_path = os.path.join(dataroot, 'cache', 'trainval_label2ans.pkl')
@@ -115,10 +117,27 @@ class VQAFeatureDataset(Dataset):
             open(os.path.join(dataroot, '%s36_imgid2idx.pkl' % name)))
         print('loading features from h5 file')
         h5_path = os.path.join(dataroot, '%s36.hdf5' % name)
-        with h5py.File(h5_path, 'r') as hf:
-            self.features = np.array(hf.get('image_features'))
-            self.spatials = np.array(hf.get('spatial_features'))
-
+        #with h5py.File(h5_path, 'r') as hf:
+        #    self.features = np.array(hf.get('image_features'))
+        #    self.spatials = np.array(hf.get('spatial_features'))
+        if self.cpu_size == 128:
+           with h5py.File(h5_path, 'r') as hf:
+                self.features = np.array(hf.get('image_features'))
+                self.spatials = np.array(hf.get('spatial_features'))
+        elif self.cpu_size == 64:
+           if self.split_name == 'val':
+                with h5py.File(h5_path, 'r') as hf:
+                    self.features = np.array(hf.get('image_features'))
+                    self.spatials = np.array(hf.get('spatial_features'))
+            else:
+                hf = h5py.File(h5_path, 'r')
+                self.features = hf['image_features']
+                self.spatials = hf['spatial_features']
+        else:
+            hf = h5py.File(h5_path, 'r')
+            self.features = hf['image_features']
+            self.spatials = hf['spatial_features']
+        
         self.entries = _load_dataset(dataroot, name, self.img_id2idx)
 
         self.tokenize()
