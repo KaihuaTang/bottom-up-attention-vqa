@@ -162,8 +162,15 @@ class VQAFeatureDataset(Dataset):
             entry['q_token'] = tokens
 
     def tensorize(self):
-        self.features = torch.from_numpy(self.features)
-        self.spatials = torch.from_numpy(self.spatials)
+        if self.cpu_size == 128:
+            self.features = torch.from_numpy(self.features)
+            self.spatials = torch.from_numpy(self.spatials)
+        elif self.cpu_size == 64:
+            if self.split_name == 'val':
+                self.features = torch.from_numpy(self.features)
+                self.spatials = torch.from_numpy(self.spatials)
+        else:
+            pass
 
         for entry in self.entries:
             question = torch.from_numpy(np.array(entry['q_token']))
@@ -183,8 +190,20 @@ class VQAFeatureDataset(Dataset):
 
     def __getitem__(self, index):
         entry = self.entries[index]
-        features = self.features[entry['image']]
-        spatials = self.spatials[entry['image']]
+
+        if self.cpu_size == 128:
+            features = self.features[entry['image']]
+            spatials = self.spatials[entry['image']]
+        elif self.cpu_size == 64:
+            if self.split_name == 'val':
+                features = self.features[entry['image']]
+                spatials = self.spatials[entry['image']]
+            else:
+                features = torch.from_numpy(self.features[entry['image']])
+                spatials = torch.from_numpy(self.spatials[entry['image']])   
+        else:
+            features = torch.from_numpy(self.features[entry['image']])
+            spatials = torch.from_numpy(self.spatials[entry['image']])
 
         question = entry['q_token']
         answer = entry['answer']
