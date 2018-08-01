@@ -142,8 +142,13 @@ class VQAFeatureDataset(Dataset):
 
         self.tokenize()
         self.tensorize()
-        self.v_dim = self.features.size(2)
-        self.s_dim = self.spatials.size(2)
+
+        try:
+            self.v_dim = self.features.size(2)
+            self.s_dim = self.spatials.size(2)
+        except TypeError:
+            self.v_dim = self.features.shape[2]
+            self.s_dim = self.spatials.shape[2]
 
     def tokenize(self, max_length=14):
         """Tokenizes the questions.
