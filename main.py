@@ -43,4 +43,6 @@ if __name__ == '__main__':
 
     train_loader = DataLoader(train_dset, batch_size, shuffle=True, num_workers=1)
     eval_loader =  DataLoader(eval_dset, batch_size, shuffle=True, num_workers=1)
+    print('eval_loader answer type: ', eval_loader.answer_type_dict)
+    print('eval_loader question type: ', eval_loader.question_type_dict)
     train(model, train_loader, eval_loader, args.epochs, args.output)

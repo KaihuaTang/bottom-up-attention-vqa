@@ -19,6 +19,7 @@ def compute_score_with_logits(logits, labels):
     one_hots = torch.zeros(*labels.size()).cuda()
     one_hots.scatter_(1, logits.view(-1, 1), 1)
     scores = (one_hots * labels)
+    print('score dim: ', scores)
     return scores
 
 
@@ -40,7 +41,8 @@ def train(model, train_loader, eval_loader, num_epochs, output):
             a = Variable(a).cuda()
             q_type = Variable(q_type).cuda()
             a_type = Variable(a_type).cuda()
-
+            print('q_type: ', q_type)
+            print('a_type', a_type)
             pred = model(v, b, q, a)
             loss = instance_bce_with_logits(pred, a)
             loss.backward()
