@@ -60,15 +60,18 @@ class Dictionary(object):
         return len(self.idx2word)
 
 
-def _create_entry(img, question, answer):
+def _create_entry(img, question, annotation, answer):
     answer.pop('image_id')
     answer.pop('question_id')
     entry = {
-        'question_id' : question['question_id'],
-        'image_id'    : question['image_id'],
-        'image'       : img,
-        'question'    : question['question'],
-        'answer'      : answer}
+        'question_id'   : question['question_id'],
+        'image_id'      : question['image_id'],
+        'image'         : img,
+        'question'      : question['question'],
+        'answer'        : answer,
+        'question_type' : annotation['question_type'],
+        'answer_type'   : annotation['answer_type'],
+        }
     return entry
 
 
@@ -81,7 +84,11 @@ def _load_dataset(dataroot, name, img_id2val):
     """
     question_path = os.path.join(
         dataroot, 'v2_OpenEnded_mscoco_%s2014_questions.json' % name)
+    annotation_path = os.path.join(
+        dataroot, 'v2_mscoco_%s2014_annotations.json' % name)
     questions = sorted(json.load(open(question_path))['questions'],
+                       key=lambda x: x['question_id'])
+    annotations = sorted(json.load(open(annotation_path))['annotations'],
                        key=lambda x: x['question_id'])
     answer_path = os.path.join(dataroot, 'cache', '%s_target.pkl' % name)
     answers = cPickle.load(open(answer_path, 'rb'))
@@ -89,11 +96,11 @@ def _load_dataset(dataroot, name, img_id2val):
 
     utils.assert_eq(len(questions), len(answers))
     entries = []
-    for question, answer in zip(questions, answers):
+    for question, annotation, answer in zip(questions, annotations, answers):
         utils.assert_eq(question['question_id'], answer['question_id'])
         utils.assert_eq(question['image_id'], answer['image_id'])
         img_id = question['image_id']
-        entries.append(_create_entry(img_id2val[img_id], question, answer))
+        entries.append(_create_entry(img_id2val[img_id], question, annotation, answer))
 
     return entries
 
@@ -112,6 +119,8 @@ class VQAFeatureDataset(Dataset):
         self.num_ans_candidates = len(self.ans2label)
 
         self.dictionary = dictionary
+        self.question_type_dict = {}
+        self.answer_type_dict = {}
 
         self.img_id2idx = cPickle.load(
             open(os.path.join(dataroot, '%s36_imgid2idx.pkl' % name)))
@@ -142,6 +151,7 @@ class VQAFeatureDataset(Dataset):
 
         self.tokenize()
         self.tensorize()
+        self.q_a_type_define()
 
         try:
             self.v_dim = self.features.size(2)
@@ -149,6 +159,31 @@ class VQAFeatureDataset(Dataset):
         except TypeError:
             self.v_dim = self.features.shape[2]
             self.s_dim = self.spatials.shape[2]
+
+    def q_a_type_define(self):
+        """
+        Assign Each Question / Answering Type to an int index, 
+        and store them in the dictionary
+        """
+        question_type_idx = 1
+        answer_type_idx = 1
+        for entry in self.entries:
+            # set question type id
+            if entry['question_type'] in self.question_type_dict:
+                entry['qtype_id'] = torch.LongTensor([self.question_type_dict[entry['question_type']]])
+            else:
+                self.question_type_dict[entry['question_type']] = question_type_idx
+                question_type_idx += 1
+                entry['qtype_id'] = torch.LongTensor([self.question_type_dict[entry['question_type']]])
+
+            # set answer type id
+            if entry['answer_type'] in self.answer_type_dict:
+                entry['atype_id'] = torch.LongTensor([self.answer_type_dict[entry['answer_type']]])
+            else:
+                self.answer_type_dict[entry['answer_type']] = answer_type_idx
+                answer_type_idx += 1
+                entry['atype_id'] = torch.LongTensor([self.answer_type_dict[entry['answer_type']]])
+
 
     def tokenize(self, max_length=14):
         """Tokenizes the questions.
@@ -214,11 +249,13 @@ class VQAFeatureDataset(Dataset):
         answer = entry['answer']
         labels = answer['labels']
         scores = answer['scores']
+        q_type_ids = entry['qtype_id']
+        a_type_ids = entry['atype_id']
         target = torch.zeros(self.num_ans_candidates)
         if labels is not None:
             target.scatter_(0, labels, scores)
 
-        return features, spatials, question, target
+        return features, spatials, question, target, q_type_ids, a_type_ids
 
     def __len__(self):
         return len(self.entries)

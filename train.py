@@ -33,11 +33,13 @@ def train(model, train_loader, eval_loader, num_epochs, output):
         train_score = 0
         t = time.time()
 
-        for i, (v, b, q, a) in enumerate(train_loader):
+        for i, (v, b, q, a, q_type, a_type) in enumerate(train_loader):
             v = Variable(v).cuda()
             b = Variable(b).cuda()
             q = Variable(q).cuda()
             a = Variable(a).cuda()
+            q_type = Variable(q_type).cuda()
+            a_type = Variable(a_type).cuda()
 
             pred = model(v, b, q, a)
             loss = instance_bce_with_logits(pred, a)
