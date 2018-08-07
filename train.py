@@ -56,7 +56,7 @@ def train(model, train_loader, eval_loader, num_epochs, output):
         evallogger = utils.EvalbyTypeLogger(eval_loader.dataset.answer_type_dict, eval_loader.dataset.question_type_dict)
         eval_score, bound = evaluate(model, eval_loader, evallogger)
         model.train(True)
-
+        # print accuracy according to answer/question types
         evallogger.printResult(show_q_type=True, show_a_type=True)
         logger.write('epoch %d, time: %.2f' % (epoch, time.time()-t))
         logger.write('\ttrain_loss: %.2f, score: %.2f' % (total_loss, train_score))
@@ -79,7 +79,7 @@ def evaluate(model, dataloader, evallogger):
 
         pred = model(v, b, q, None)
         batch_matching = compute_score_with_logits(pred, a.cuda())
-        evallogger.update(batch_matching, a_type.cuda(), q_type.cuda())
+        evallogger.update(batch_matching, a_type.cuda().view(-1), q_type.cuda().view(-1))
         batch_score = batch_matching.sum()
         score += batch_score
         upper_bound += (a.max(1)[0]).sum()

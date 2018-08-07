@@ -119,6 +119,8 @@ class EvalbyTypeLogger(object):
         q_type: [batch_size] LongTensor
         """
         batch_scores = score_tensor.sum(1)
+        assert(len(a_type.shape) == 1)
+        assert(len(q_type.shape) == 1)
 
         for i in range(self.at_num):
             num_at_i = torch.nonzero(a_type == (i+1)).numel()
