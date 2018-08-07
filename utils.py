@@ -133,16 +133,17 @@ class EvalbyTypeLogger(object):
             self.qt_accu[i] += score_qt_i
 
     def print(self):
-        print("========== Accuracy by Type of Answers ==========")
+        print "========== Accuracy by Type of Answers =========="
+        
         for key in self.a_type_dict.keys():
             type_score = self.at_accu[self.a_type_dict[key]-1]
             type_num = self.at_count[self.a_type_dict[key]-1]
-            print('Type: \t', key, ' Accuracy: \t', float(type_score)/float(type_num), 'Total Tpye Num: \t', float(type_num))
-        print("========== Accuracy by Type of Questions ==========")
+            print 'Type: \t', key, '\t', ' Accuracy: \t', float(type_score)/float(type_num), '\t', 'Total Tpye Num: \t', float(type_num)
+        print "========== Accuracy by Type of Questions =========="
         for key in self.q_type_dict.keys():
             type_score = self.qt_accu[self.q_type_dict[key]-1]
             type_num = self.qt_count[self.q_type_dict[key]-1]
-            print('Type: \t', key, ' Accuracy: \t', float(type_score)/float(type_num), 'Total Tpye Num: \t', float(type_num))
-        print("==================== End print ====================")
+            print 'Type: \t', key, '\t', ' Accuracy: \t', float(type_score)/float(type_num), '\t', 'Total Tpye Num: \t', float(type_num)
+        print "==================== End print ===================="
 
 
