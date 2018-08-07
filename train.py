@@ -79,7 +79,7 @@ def evaluate(model, dataloader, evallogger):
 
         pred = model(v, b, q, None)
         batch_matching = compute_score_with_logits(pred, a.cuda())
-        evallogger.update(batch_matching, a_type.cuda().view(-1), q_type.cuda().view(-1))
+        evallogger.update(batch_matching, a_type.cuda(), q_type.cuda())
         batch_score = batch_matching.sum()
         score += batch_score
         upper_bound += (a.max(1)[0]).sum()
