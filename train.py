@@ -57,7 +57,7 @@ def train(model, train_loader, eval_loader, num_epochs, output):
         eval_score, bound = evaluate(model, eval_loader, evallogger)
         model.train(True)
 
-        evallogger.print()
+        evallogger.printResult(show_q_type=True, show_a_type=True)
         logger.write('epoch %d, time: %.2f' % (epoch, time.time()-t))
         logger.write('\ttrain_loss: %.2f, score: %.2f' % (total_loss, train_score))
         logger.write('\teval score: %.2f (%.2f)' % (100 * eval_score, 100 * bound))
@@ -76,11 +76,10 @@ def evaluate(model, dataloader, evallogger):
         v = Variable(v, volatile=True).cuda()
         b = Variable(b, volatile=True).cuda()
         q = Variable(q, volatile=True).cuda()
-        q_type = Variable(q_type, volatile=True).cuda()
-        a_type = Variable(a_type, volatile=True).cuda()
+
         pred = model(v, b, q, None)
         batch_matching = compute_score_with_logits(pred, a.cuda())
-        evallogger.update(batch_matching, a_type, q_type)
+        evallogger.update(batch_matching, a_type.cuda(), q_type.cuda())
         batch_score = batch_matching.sum()
         score += batch_score
         upper_bound += (a.max(1)[0]).sum()
