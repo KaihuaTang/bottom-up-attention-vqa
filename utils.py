@@ -134,7 +134,7 @@ class EvalbyTypeLogger(object):
             score_qt_i = ((q_type == (i+1)).float() * batch_scores).sum()
             self.qt_accu[i] += score_qt_i
 
-    def printResult(self, show_q_type=True, show_a_type=True):
+    def printResult(self, show_q_type=False, show_a_type=True):
         if(show_a_type):
             print("========== Accuracy by Type of Answers ==========")
             for key in self.a_type_dict.keys():
@@ -147,6 +147,6 @@ class EvalbyTypeLogger(object):
                 type_score = self.qt_accu[self.q_type_dict[key]-1]
                 type_num = self.qt_count[self.q_type_dict[key]-1] + 1e-10
                 print('Type: \t %s \t  Accuracy: \t %.6f \t Total Tpye Num: \t %.1f' % (key, float(type_score)/float(type_num), float(type_num)) )
-        print("==================== End print ====================")
+        #print("==================== End print ====================")
 
 
