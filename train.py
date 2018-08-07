@@ -19,7 +19,6 @@ def compute_score_with_logits(logits, labels):
     one_hots = torch.zeros(*labels.size()).cuda()
     one_hots.scatter_(1, logits.view(-1, 1), 1)
     scores = (one_hots * labels)
-    print('score dim: ', scores)
     return scores
 
 
@@ -39,10 +38,7 @@ def train(model, train_loader, eval_loader, num_epochs, output):
             b = Variable(b).cuda()
             q = Variable(q).cuda()
             a = Variable(a).cuda()
-            q_type = Variable(q_type).cuda()
-            a_type = Variable(a_type).cuda()
-            print('q_type: ', q_type)
-            print('a_type', a_type)
+
             pred = model(v, b, q, a)
             loss = instance_bce_with_logits(pred, a)
             loss.backward()
@@ -57,9 +53,11 @@ def train(model, train_loader, eval_loader, num_epochs, output):
         total_loss /= len(train_loader.dataset)
         train_score = 100 * train_score / len(train_loader.dataset)
         model.train(False)
-        eval_score, bound = evaluate(model, eval_loader)
+        evallogger = utils.EvalbyTypeLogger(eval_loader.dataset.answer_type_dict, eval_loader.dataset.question_type_dict)
+        eval_score, bound = evaluate(model, eval_loader, evallogger)
         model.train(True)
 
+        evallogger.print()
         logger.write('epoch %d, time: %.2f' % (epoch, time.time()-t))
         logger.write('\ttrain_loss: %.2f, score: %.2f' % (total_loss, train_score))
         logger.write('\teval score: %.2f (%.2f)' % (100 * eval_score, 100 * bound))
@@ -70,16 +68,20 @@ def train(model, train_loader, eval_loader, num_epochs, output):
             best_eval_score = eval_score
 
 
-def evaluate(model, dataloader):
+def evaluate(model, dataloader, evallogger):
     score = 0
     upper_bound = 0
     num_data = 0
-    for v, b, q, a in iter(dataloader):
+    for v, b, q, a, q_type, a_type in iter(dataloader):
         v = Variable(v, volatile=True).cuda()
         b = Variable(b, volatile=True).cuda()
         q = Variable(q, volatile=True).cuda()
+        q_type = Variable(q_type, volatile=True).cuda()
+        a_type = Variable(a_type, volatile=True).cuda()
         pred = model(v, b, q, None)
-        batch_score = compute_score_with_logits(pred, a.cuda()).sum()
+        batch_matching = compute_score_with_logits(pred, a.cuda())
+        evallogger.update(batch_matching, a_type, q_type)
+        batch_score = batch_matching.sum()
         score += batch_score
         upper_bound += (a.max(1)[0]).sum()
         num_data += pred.size(0)

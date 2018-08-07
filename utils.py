@@ -98,3 +98,51 @@ class Logger(object):
         self.log_file.write(msg + '\n')
         self.log_file.flush()
         print(msg)
+
+
+class EvalbyTypeLogger(object):
+    def __init__(self, a_type_dict, q_type_dict):
+        self.a_type_dict = a_type_dict
+        self.q_type_dict = q_type_dict
+        self.at_num = len(a_type_dict)
+        self.qt_num = len(q_type_dict)
+
+        self.at_accu = np.zeros(self.at_num)
+        self.at_count = np.zeros(self.at_num)
+        self.qt_accu = np.zeros(self.qt_num)
+        self.qt_count = np.zeros(self.qt_num)
+
+    def update(self, score_tensor, a_type, q_type):
+        """
+        score_tensor: [batch_size, num_answers]
+        a_type: [batch_size] LongTensor
+        q_type: [batch_size] LongTensor
+        """
+        batch_scores = score_tensor.sum(1)
+
+        for i in range(self.at_num):
+            num_at_i = torch.nonzero(a_type == (i+1)).numel()
+            self.at_count[i] += num_at_i
+            score_at_i = ((a_type == (i+1)).float() * batch_scores).sum()
+            self.at_accu[i] += score_at_i
+
+        for i in range(self.qt_num):
+            num_qt_i = torch.nonzero(q_type == (i+1)).numel()
+            self.qt_count[i] += num_qt_i
+            score_qt_i = ((q_type == (i+1)).float() * batch_scores).sum()
+            self.qt_accu[i] += score_qt_i
+
+    def print(self):
+        print("========== Accuracy by Type of Answers ==========")
+        for key in self.a_type_dict.keys():
+            type_score = self.at_accu[self.a_type_dict[key]-1]
+            type_num = self.at_count[self.a_type_dict[key]-1]
+            print('Type: \t', key, ' Accuracy: \t', float(type_score)/float(type_num), 'Total Tpye Num: \t', float(type_num))
+        print("========== Accuracy by Type of Questions ==========")
+        for key in self.q_type_dict.keys():
+            type_score = self.qt_accu[self.q_type_dict[key]-1]
+            type_num = self.qt_count[self.q_type_dict[key]-1]
+            print('Type: \t', key, ' Accuracy: \t', float(type_score)/float(type_num), 'Total Tpye Num: \t', float(type_num))
+        print("==================== End print ====================")
+
+
