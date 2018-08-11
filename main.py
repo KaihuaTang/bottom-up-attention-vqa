@@ -45,6 +45,7 @@ if __name__ == '__main__':
     # load model
     ckpt = torch.load(args.ckpt)
     utils.optimistic_restore(model, ckpt['state_dict'])
+    utils.print_para(model)
 
     train_loader = DataLoader(train_dset, batch_size, shuffle=True, num_workers=1)
     eval_loader =  DataLoader(eval_dset, batch_size, shuffle=True, num_workers=1)
