@@ -10,6 +10,26 @@ import torch.nn as nn
 
 EPS = 1e-7
 
+def optimistic_restore(network, state_dict):
+    mismatch = False
+    own_state = network.state_dict()
+    for name, param in state_dict.items():
+        if name not in own_state:
+            print("Unexpected key {} in state_dict with size {}".format(name, param.size()))
+            mismatch = True
+        elif param.size() == own_state[name].size():
+            own_state[name].copy_(param)
+        else:
+            print("Network has {} with size {}, ckpt has {}".format(name,
+                                                                    own_state[name].size(),
+                                                                    param.size()))
+            mismatch = True
+
+    missing = set(own_state.keys()) - set(state_dict.keys())
+    if len(missing) > 0:
+        print("We couldn't find {}".format(','.join(missing)))
+        mismatch = True
+    return not mismatch
 
 def assert_eq(real, expected):
     assert real == expected, '%s (true) vs %s (expected)' % (real, expected)

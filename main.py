@@ -6,7 +6,7 @@ import numpy as np
 
 from dataset import Dictionary, VQAFeatureDataset
 import base_model
-from train import train
+from train import train, test
 import utils
 
 
@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('--num_hid', type=int, default=1024)
     parser.add_argument('--model', type=str, default='baseline0_newatt')
     parser.add_argument('--output', type=str, default='saved_models/exp0')
+    parser.add_argument('--ckpt', type=str, default='saved_models/exp0/model-15.tar')
     parser.add_argument('--batch_size', type=int, default=512)
     parser.add_argument('--cpu_size', type=int, default=32, help='32|64|128')
     parser.add_argument('--seed', type=int, default=1111, help='random seed')
@@ -40,7 +41,12 @@ if __name__ == '__main__':
     model.w_emb.init_embedding('data/glove6b_init_300d.npy')
 
     model = nn.DataParallel(model).cuda()
+    
+    # load model
+    ckpt = torch.load(args.ckpt)
+    utils.optimistic_restore(model, ckpt['state_dict'])
 
     train_loader = DataLoader(train_dset, batch_size, shuffle=True, num_workers=1)
     eval_loader =  DataLoader(eval_dset, batch_size, shuffle=True, num_workers=1)
-    train(model, train_loader, eval_loader, args.epochs, args.output)
+    #train(model, train_loader, eval_loader, args.epochs, args.output)
+    test(model, eval_loader, args.output)

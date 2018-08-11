@@ -67,6 +67,16 @@ def train(model, train_loader, eval_loader, num_epochs, output):
             torch.save({'state_dict': model.state_dict()}, model_path)
             best_eval_score = eval_score
 
+def test(model, eval_loader, output):
+    utils.create_dir(output)
+    logger = utils.Logger(os.path.join(output, 'log.txt'))
+    model.train(False)
+    evallogger = utils.EvalbyTypeLogger(eval_loader.dataset.answer_type_dict, eval_loader.dataset.question_type_dict)
+    eval_score, bound = evaluate(model, eval_loader, evallogger)
+    # print accuracy according to answer/question types
+    evallogger.printResult(show_q_type=False, show_a_type=True)
+    logger.write('\teval score: %.2f (%.2f)' % (100 * eval_score, 100 * bound))
+
 
 def evaluate(model, dataloader, evallogger):
     score = 0
